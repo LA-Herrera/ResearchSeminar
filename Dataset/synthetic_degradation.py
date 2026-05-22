@@ -14,13 +14,13 @@ class SynthDeg:
     def degrade_image(self, img: np.ndarray, blur: str = None, scaling: str = None, noise: str = None) -> np.ndarray:
         if blur is None:
             blur = random.choice(list(self.blurs))
-            print(blur)
+            # print(blur)
         if scaling is None:
             scaling = random.choice(list(self.scaling))
-            print(scaling)
+            # print(scaling)
         if noise is None:
             noise = random.choice(list(self.noise))
-            print(noise)
+            # print(noise)
         
         #First Pass
         blurred_img = self.blurs[blur](img)
@@ -140,6 +140,7 @@ class Compression:
 
         return compressed
 
+    #Credit to: Frobot StackOverflow
     @staticmethod
     def h264_compression(img: np.ndarray, amount: int = None) -> np.ndarray:
         _, png_data = cv2.imencode('.png', img)
