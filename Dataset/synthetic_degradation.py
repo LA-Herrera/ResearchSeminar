@@ -2,25 +2,39 @@ import random
 import cv2
 import subprocess
 import numpy as np
+from skimage.util import random_noise
+from typing import Tuple
 
 class SynthDeg:
 
     def __init__(self) -> None:
         self.blurs = {'Isotropic': Blur.isotropic_blur, 'Anisotropic': Blur.anisotropic_blur, 'LinearMotion': Blur.linear_motion_blur}
         self.scaling = {'Bicubic': Downscale.bicubic_downscale, 'Bilinear': Downscale.bilinear_downscale, 'AreaSampling': Downscale.areasampling_downscale}
-        self.noise = {'Gaussian': Noise.gaussian_noise, 'SaltnPepper': Noise.saltpepper_noise, 'Speckle': Noise.speckle_noise}
+        self.noise = {'Gaussian': Noise.gaussian_noise, 'SaltnPepper': Noise.saltpepper_noise, 'Speckle': Noise.speckle_noise, 'Poisson': Noise.poisson_noise}
         self.compression = {'JPEG': Compression.jpeg_compression, 'H264': Compression.h264_compression}
 
+    def degrade_image_shuffle(self, img: np.ndarray, blur: str = None, scaling: str = None, noise: str = None) -> np.ndarray:
+
+        blur, scaling, noise = self.set_operators(blur, scaling, noise)
+
+        operators = [self.blurs[blur], self.scaling[scaling], self.noise[noise]]
+        random.shuffle(operators)
+        
+        #First Pass
+        degraded_img = img.copy()
+        for op in operators:
+            degraded_img = op(degraded_img)
+
+        #Second Pass
+        scndblurred_img = self.blurs['Isotropic'](degraded_img, random.uniform(0.2, 0.8))
+        scndnoised_img = self.noise['Gaussian'](scndblurred_img, random.uniform(1, 8))
+        final_img = self.compression['JPEG'](scndnoised_img, random.randint(70, 85))
+
+        return final_img    
+
     def degrade_image(self, img: np.ndarray, blur: str = None, scaling: str = None, noise: str = None) -> np.ndarray:
-        if blur is None:
-            blur = random.choice(list(self.blurs))
-            # print(blur)
-        if scaling is None:
-            scaling = random.choice(list(self.scaling))
-            # print(scaling)
-        if noise is None:
-            noise = random.choice(list(self.noise))
-            # print(noise)
+        
+        blur, scaling, noise = self.set_operators(blur, scaling, noise)
         
         #First Pass
         blurred_img = self.blurs[blur](img)
@@ -34,6 +48,19 @@ class SynthDeg:
         final_img = self.compression['JPEG'](scndnoised_img, random.randint(70, 85))
 
         return final_img
+    
+    def set_operators(self, blur: str = None, scaling: str = None, noise: str = None) -> Tuple[str, str, str]:
+        if blur is None:
+            blur = random.choice(list(self.blurs))
+            print(blur)
+        if scaling is None:
+            scaling = random.choice(list(self.scaling))
+            print(scaling)
+        if noise is None:
+            noise = random.choice(list(self.noise))
+            print(noise)
+
+        return blur, scaling, noise
 
 class Blur:
     @staticmethod
@@ -85,14 +112,14 @@ class Downscale:
     
 class Noise:
     @staticmethod
-    def gaussian_noise(img: np.ndarray, mean: int = 0, std: float = None) -> np.ndarray:
+    def gaussian_noise(img: np.ndarray, mean: float = 0, std: float = None) -> np.ndarray:
         if std is None:
             std = random.uniform(1, 25)
 
-        noise = np.random.normal(mean, std, img.shape)
-        res = img.astype(np.float32) + noise
+        img_n = img.astype(np.float32) / 255
+        noise = random_noise(img_n, mode="gaussian", mean=mean/255, var=(std/255)**2, clip=False)
         
-        return np.clip(res, 0, 255).astype(np.uint8)
+        return (np.clip(noise, 0, 1) * 255).astype(np.uint8)
     
     @staticmethod
     def saltpepper_noise(img: np.ndarray, amount: float = None, s_vs_p: float = None) -> np.ndarray:
@@ -101,32 +128,27 @@ class Noise:
         if s_vs_p is None:
             s_vs_p = random.uniform(0.3, 0.7)
 
-        h, w = img.shape[:2]
-        pixels = h * w
+        img_n = img.astype(np.float32) / 255
+        noise = random_noise(img_n, mode="s&p", amount=amount, salt_vs_pepper=s_vs_p)
 
-        num_salt = int(np.ceil(amount * pixels * s_vs_p))
-        salt_r = np.random.randint(0, h, num_salt)
-        salt_c = np.random.randint(0, w, num_salt)
-
-        num_pepper = int(np.ceil(amount * pixels * (1 - s_vs_p)))
-        pepper_r = np.random.randint(0, h, num_pepper)
-        pepper_c = np.random.randint(0, w, num_pepper)
-
-        res = img.astype(np.float32)
-        res[salt_r, salt_c] = 255
-        res[pepper_r, pepper_c] = 0
-
-        return np.clip(res, 0, 255).astype(np.uint8)
+        return (np.clip(noise, 0, 1) * 255).astype(np.uint8)
     
     @staticmethod
     def speckle_noise(img: np.ndarray, std: float = None) -> np.ndarray:
         if std is None:
             std = random.uniform(0.02, 0.15)
+        
+        img_n = img.astype(np.float32) / 255
+        noise = random_noise(img_n, mode="speckle", var=(std)**2) 
 
-        noise = np.random.randn(*img.shape) * std
-        res = img.astype(np.float32) + img.astype(np.float32) * noise
+        return (np.clip(noise, 0, 1) * 255).astype(np.uint8)
+    
+    @staticmethod
+    def poisson_noise(img: np.ndarray) -> np.ndarray:
+        img_n = img.astype(np.float32) / 255
+        noise = random_noise(img_n, mode="poisson") 
 
-        return np.clip(res, 0, 255).astype(np.uint8)
+        return (np.clip(noise, 0, 1) * 255).astype(np.uint8)
 
 class Compression:
     @staticmethod
@@ -140,17 +162,23 @@ class Compression:
 
         return compressed
 
-    #Credit to: Frobot StackOverflow
+    #Credit to: Frobot StackOverflow, for the basis
     @staticmethod
     def h264_compression(img: np.ndarray, amount: int = None) -> np.ndarray:
         _, png_data = cv2.imencode('.png', img)
         if amount is None:
             amount = random.randint(25, 50)
 
+        h, w = img.shape[:2]
+
+        padding_h = h if h%2 == 0 else h + 1
+        padding_w = w if w%2 == 0 else w + 1
+
         ffmpeg_command = [
             'ffmpeg',
             '-y',                        # Overwrite output files without asking
             '-i', 'pipe:0',              # Input from stdin
+            '-vf', f'pad={padding_w}:{padding_h}:0:0:black',
             '-vcodec', 'libx264',        # Use H.264 codec
             '-qp', str(amount),          # Quality parameter
             '-pix_fmt', 'yuv420p',       # Pixel format
@@ -193,20 +221,22 @@ class Compression:
 
         raw_img_data = result.stdout
 
-        expected_size = img.shape[1] * img.shape[0] * 3
+        padded_size = padding_h * padding_w * 3
+        expected_size = h * w * 3
 
-        if len(raw_img_data) != expected_size:
-            print("Unexpected raw img data size:", len(raw_img_data))
-            raise ValueError(f"Cannot reshape array of size {len(raw_img_data)} into shape ({img.shape[0]},{img.shape[1]},3)")
-
-        # Convert the raw data to a numpy array
-        frame = np.frombuffer(raw_img_data, dtype=np.uint8).reshape((img.shape[0], img.shape[1], 3))
-
+        if len(raw_img_data) == padded_size:
+            padded_img = np.frombuffer(raw_img_data, dtype=np.uint8).reshape((padding_h, padding_w, 3))
+            frame = padded_img[:h, :w, :]
+        elif len(raw_img_data) == expected_size:
+            frame = np.frombuffer(raw_img_data, dtype=np.uint8).reshape((h, w, 3))
+        else:
+            raise ValueError(f"Unexpected raw img data size: {len(raw_img_data)}")
+        
         return frame
 
 if __name__ == "__main__":
     img = cv2.imread('initial_test.jpg')
     
     deg = SynthDeg()
-    deg_img = deg.degrade_image(img)
+    deg_img = deg.degrade_image_shuffle(img)
     cv2.imwrite('initial_test_output.jpeg', deg_img)
