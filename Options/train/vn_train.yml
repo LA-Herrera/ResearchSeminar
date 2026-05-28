@@ -1,0 +1,99 @@
+path:
+  root: ./
+  experiments_root: experiments
+  pretrain_network_g: ~
+  strict_loag_g: true
+  resume_state: ~
+
+name: VN
+model_type: VN_Model
+scale: 4
+num_gpu: 1
+manual_seed: 42
+
+datasets:
+  train:
+    name: TJU-DHD_traffic
+    type: PairedImageDataset
+    dataroot_gt: datasets/train/hr
+    dataroot_lr: datasets/train/lr
+    io_backend:
+      type: disk
+    
+    gt_size: 256
+    use_hflip: true
+    use_rot: true
+
+    num_worker_per_gpu: 4
+    batch_size_per_gpu: 16
+    dataset_enlarge_ratio: 1
+
+    prefetch_mode: ~
+  
+  val:
+    name: TJU-DHD_traffic
+    type: PairedImageDataset
+    dataroot_gt: datasets/val/hr
+    dataroot_lr: datasets/val/lr
+    io_backend:
+      type: disk
+
+network_g:
+  type: VN
+  depth: 15
+  scale_factor: 4
+  num_channels : 64
+
+train:
+  optim_g:
+    type: Adam
+    lr: !!float 2e-4
+    weight_decay: 0
+  
+  scheduler:
+    type: MultiStepLR
+    milestiones: [250000, 400000, 450000, 475000]
+    gamma: 0.5
+  
+  total_iter: 500000
+  warmup_iter = -1
+
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+  perceptual_opt:
+    type: PerceptualLoss
+    layer_weights:
+      'conv3_4': 1.0
+    vgg_type: vgg19
+    use_input_more: true
+    range_norm: false
+    perceptual_weight: 0.0
+    criterion: l1
+
+val:
+  val_freq: !!float 5e3
+  save_img: false
+
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: false
+
+logger:
+  print_freq: 100
+  save_checkpoint_freq: !!float 5e3
+  use_tb_logger: true
+  wandb:
+    project: ~
+
+  dist_params:
+    backend: nccl
+    port: 29500
