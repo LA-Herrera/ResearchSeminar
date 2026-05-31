@@ -1,11 +1,14 @@
 path:
   root: ./
-  experiments_root: experiments
+  experiments_root: /PATH/experiments/VN_x4_d4/model/
+  training_states: /PATH/experiments/VN_x4_d4/training_states/
+  models: /PATH/ResearchSeminar/Training/models/
+  log: /PATH/experiments/VN_x4_d4/log/
   pretrain_network_g: ~
-  strict_loag_g: true
+  strict_load_g: true
   resume_state: ~
 
-name: VN
+name: VN_x4_d4
 model_type: VN_Model
 scale: 4
 num_gpu: 1
@@ -15,17 +18,17 @@ datasets:
   train:
     name: TJU-DHD_traffic
     type: PairedImageDataset
-    dataroot_gt: datasets/train/hr
-    dataroot_lr: datasets/train/lr
+    dataroot_gt: /PATH/train/dhd_traffic/HR
+    dataroot_lq: /PATH/train/dhd_traffic/LR
     io_backend:
       type: disk
     
-    gt_size: 256
+    gt_size: 128
     use_hflip: true
     use_rot: true
 
-    num_worker_per_gpu: 4
-    batch_size_per_gpu: 16
+    num_worker_per_gpu: 4 
+    batch_size_per_gpu: 32
     dataset_enlarge_ratio: 1
 
     prefetch_mode: ~
@@ -33,30 +36,31 @@ datasets:
   val:
     name: TJU-DHD_traffic
     type: PairedImageDataset
-    dataroot_gt: datasets/val/hr
-    dataroot_lr: datasets/val/lr
+    dataroot_gt: /PATH/val_small/dhd_traffic/HR
+    dataroot_lq: /PATH/val_small/dhd_traffic/LR
     io_backend:
       type: disk
 
 network_g:
   type: VN
-  depth: 15
+  depth: 4
   scale_factor: 4
   num_channels : 64
 
 train:
   optim_g:
     type: Adam
-    lr: !!float 2e-4
+    lr: !!float 8e-4
     weight_decay: 0
   
   scheduler:
     type: MultiStepLR
-    milestiones: [250000, 400000, 450000, 475000]
+    milestones: [35364, 53046, 63655, 67191]
     gamma: 0.5
   
-  total_iter: 500000
-  warmup_iter = -1
+  use_amp: true
+  total_iter: 70728 #50 epochs
+  warmup_iter: -1
 
   pixel_opt:
     type: L1Loss
@@ -68,13 +72,12 @@ train:
     layer_weights:
       'conv3_4': 1.0
     vgg_type: vgg19
-    use_input_more: true
     range_norm: false
-    perceptual_weight: 0.0
+    perceptual_weight: 0.1
     criterion: l1
 
 val:
-  val_freq: !!float 5e3
+  val_freq: !!float 1e4
   save_img: false
 
   metrics:
@@ -89,11 +92,11 @@ val:
 
 logger:
   print_freq: 100
-  save_checkpoint_freq: !!float 5e3
-  use_tb_logger: true
+  save_checkpoint_freq: !!float 5e2
+  use_tb_logger: false
   wandb:
     project: ~
 
-  dist_params:
-    backend: nccl
-    port: 29500
+dist_params:
+  backend: nccl
+  port: 29500

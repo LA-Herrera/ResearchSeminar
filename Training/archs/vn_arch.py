@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from BasicSR.basicsr.utils.registry import ARCH_REGISTRY
 
 class SimpleGate(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -14,7 +15,7 @@ class NAFBlock(nn.Module):
         #Added layer
         self.layer = nn.Conv2d(num_channels, num_channels, kernel_size=3, padding=1)
 
-        self.layer_norm = nn.LayerNorm([num_channels, 32, 32])
+        self.layer_norm = nn.LayerNorm(num_channels)
         self.conv1 = nn.Conv2d(num_channels, num_channels * 2, kernel_size=1)
         self.deconv = nn.Conv2d(num_channels * 2, num_channels * 2, kernel_size=3, padding=1, groups=num_channels * 2)
         self.simple_gate = SimpleGate()
@@ -26,7 +27,9 @@ class NAFBlock(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         layer = self.layer(x)
+        layer = layer.permute(0, 2, 3, 1)
         layer_norm = self.layer_norm(layer)
+        layer_norm = layer_norm.permute(0, 3, 1, 2)
         x_conv1 = self.conv1(layer_norm)
         x_deconv = self.deconv(x_conv1)
         simple_gate = self.simple_gate(x_deconv)
@@ -35,7 +38,9 @@ class NAFBlock(nn.Module):
 
         x = x * self.beta + x_conv2
 
-        layer_norm = self.layer_norm(x)
+        layer = x.permute(0, 2, 3, 1)
+        layer_norm = self.layer_norm(layer)
+        layer_norm = layer_norm.permute(0, 3, 1, 2)
         x_conv1 = self.conv1(layer_norm)
         simple_gate = self.simple_gate(x_conv1)
         x_conv2 = self.conv2(simple_gate)
@@ -44,17 +49,17 @@ class NAFBlock(nn.Module):
 
         return x
     
-    
+@ARCH_REGISTRY.register()
 class VN(nn.Module):
-    def __init__(self, depth: int = 15, scale_factor: int = 4, num_channels: int = 64) -> None:
+    def __init__(self, depth: int = 4, scale_factor: int = 4, num_channels: int = 64) -> None:
         super(VN, self).__init__()
         self.scale_factor = scale_factor
 
-        self.first_layer = nn.Conv2d(24, num_channels, kernel_size=3, padding=1)
+        self.first_layer = nn.Conv2d(9, num_channels, kernel_size=3, padding=1)
         self.nafblocks = nn.Sequential(*[NAFBlock(num_channels) for _ in range(depth)])
         self.last_layer = nn.Conv2d(num_channels, 3, kernel_size=3, padding=1)
 
-        self.fuse = nn.Conv2d(24, 3, kernel_size=3, padding=1)
+        self.fuse = nn.Conv2d(9, 3, kernel_size=3, padding=1)
 
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
