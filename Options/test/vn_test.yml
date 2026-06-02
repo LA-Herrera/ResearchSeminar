@@ -1,0 +1,40 @@
+name: VN_v5
+model_type: VN_Model
+scale: 4
+num_gpu: 1
+manual_seed: 42
+
+path:
+  pretrain_network_g: Experiments/models/vn_x4_d8_v3.pth
+  strict_load_g: true
+  results_root: Experiments/results
+  log: results/logs
+  visualization: results/visualization
+
+datasets:
+  test:
+    name: single_image
+    type: PairedImageDataset
+    dataroot_lq: C:/Users/Usuario/Documents/GitHub/ResearchSeminar/Dataset/LR
+    dataroot_gt: C:/Users/Usuario/Documents/GitHub/ResearchSeminar/Dataset/HR
+    io_backend:
+      type: disk
+  
+network_g:
+  type: VN
+  depth: 8
+  scale_factor: 4
+  num_channels : 64
+
+val:
+  save_img: true
+  suffix: vn_x4_d8
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false

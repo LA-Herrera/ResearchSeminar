@@ -43,9 +43,9 @@ class SynthDeg:
         compressed_img = self.compression['H264'](noised_img)
 
         #Second Pass
-        scndblurred_img = self.blurs['Isotropic'](compressed_img, random.uniform(0.2, 0.8))
-        scndnoised_img = self.noise['Gaussian'](scndblurred_img, random.uniform(1, 8))
-        final_img = self.compression['JPEG'](scndnoised_img, random.randint(70, 85))
+        scndblurred_img = self.blurs['Isotropic'](compressed_img, random.uniform(0.2, 0.4))
+        scndnoised_img = self.noise['Gaussian'](scndblurred_img, random.uniform(1, 4))
+        final_img = self.compression['JPEG'](scndnoised_img, random.randint(70, 92))
 
         return final_img
     
@@ -66,16 +66,16 @@ class Blur:
     @staticmethod
     def isotropic_blur(img: np.ndarray, sig: float = 0) -> np.ndarray:
         if sig <= 0:
-            sig = random.uniform(0.2, 3)
+            sig = random.uniform(0.2, 1.5)
         
         return cv2.GaussianBlur(img, (0, 0), sigmaX=sig, sigmaY=sig)
     
     @staticmethod
     def anisotropic_blur(img: np.ndarray, sigX: float = 0.0, sigY: float = 0.0) -> np.ndarray:
         if sigX <= 0:
-            sigX = random.uniform(0.5, 8)
+            sigX = random.uniform(0.5, 3)
         if sigY <= 0:
-            sigY = random.uniform(0.5, 8)
+            sigY = random.uniform(0.5, 3)
         
         return cv2.GaussianBlur(img, (0, 0), sigmaX=sigX, sigmaY=sigY)
     
@@ -84,7 +84,7 @@ class Blur:
         if rad is None:
             rad = random.uniform(0, np.pi)
         if length is None:
-            length = random.randint(1, 20)
+            length = random.randint(1, 15)
 
         kernel = np.zeros((length, length), dtype=np.float32)
         center = length // 2
@@ -114,7 +114,7 @@ class Noise:
     @staticmethod
     def gaussian_noise(img: np.ndarray, mean: float = 0, std: float = None) -> np.ndarray:
         if std is None:
-            std = random.uniform(1, 25)
+            std = random.uniform(1, 12)
 
         img_n = img.astype(np.float32) / 255
         noise = random_noise(img_n, mode="gaussian", mean=mean/255, var=(std/255)**2, clip=False)
@@ -124,7 +124,7 @@ class Noise:
     @staticmethod
     def saltpepper_noise(img: np.ndarray, amount: float = None, s_vs_p: float = None) -> np.ndarray:
         if amount is None:
-            amount = random.uniform(0.0, 0.005)
+            amount = random.uniform(0.0, 0.002)
         if s_vs_p is None:
             s_vs_p = random.uniform(0.3, 0.7)
 
@@ -136,7 +136,7 @@ class Noise:
     @staticmethod
     def speckle_noise(img: np.ndarray, std: float = None) -> np.ndarray:
         if std is None:
-            std = random.uniform(0.02, 0.15)
+            std = random.uniform(0.02, 0.07)
         
         img_n = img.astype(np.float32) / 255
         noise = random_noise(img_n, mode="speckle", var=(std)**2) 
@@ -167,7 +167,7 @@ class Compression:
     def h264_compression(img: np.ndarray, amount: int = None) -> np.ndarray:
         _, png_data = cv2.imencode('.png', img)
         if amount is None:
-            amount = random.randint(25, 50)
+            amount = random.randint(30, 40)
 
         h, w = img.shape[:2]
 
@@ -235,8 +235,8 @@ class Compression:
         return frame
 
 if __name__ == "__main__":
-    img = cv2.imread('initial_test.jpg')
+    img = cv2.imread('./HR/initial_test.jpg')
     
     deg = SynthDeg()
     deg_img = deg.degrade_image_shuffle(img)
-    cv2.imwrite('initial_test_output.jpeg', deg_img)
+    cv2.imwrite('./LR/initial_test_other.jpg', deg_img)

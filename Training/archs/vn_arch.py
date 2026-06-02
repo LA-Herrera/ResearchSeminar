@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from BasicSR.basicsr.utils.registry import ARCH_REGISTRY
+from basicsr.utils.registry import ARCH_REGISTRY
 
 class SimpleGate(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -12,23 +12,23 @@ class NAFBlock(nn.Module):
     def __init__(self, num_channels: int = 64) -> None:
         super().__init__()
 
-        #Added layer
-        self.layer = nn.Conv2d(num_channels, num_channels, kernel_size=3, padding=1)
-
-        self.layer_norm = nn.LayerNorm(num_channels)
+        self.layer_norm1 = nn.LayerNorm(num_channels)
         self.conv1 = nn.Conv2d(num_channels, num_channels * 2, kernel_size=1)
         self.deconv = nn.Conv2d(num_channels * 2, num_channels * 2, kernel_size=3, padding=1, groups=num_channels * 2)
         self.simple_gate = SimpleGate()
         self.attention = nn.Sequential(nn.AdaptiveAvgPool2d(1), nn.Conv2d(num_channels, num_channels, kernel_size=1))
         self.conv2 = nn.Conv2d(num_channels, num_channels, kernel_size=1)
 
+        self.layer_norm2 = nn.LayerNorm(num_channels)
+        self.conv3 = nn.Conv2d(num_channels, num_channels * 2, kernel_size=1)
+        self.conv4 = nn.Conv2d(num_channels, num_channels, kernel_size=1)
+
         self.beta = nn.Parameter(torch.zeros((1, num_channels, 1, 1)), requires_grad=True)
         self.gamma = nn.Parameter(torch.zeros((1, num_channels, 1, 1)), requires_grad=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        layer = self.layer(x)
-        layer = layer.permute(0, 2, 3, 1)
-        layer_norm = self.layer_norm(layer)
+        layer = x.permute(0, 2, 3, 1)
+        layer_norm = self.layer_norm1(layer)
         layer_norm = layer_norm.permute(0, 3, 1, 2)
         x_conv1 = self.conv1(layer_norm)
         x_deconv = self.deconv(x_conv1)
@@ -36,16 +36,16 @@ class NAFBlock(nn.Module):
         sca = simple_gate * self.attention(simple_gate)
         x_conv2 = self.conv2(sca)
 
-        x = x * self.beta + x_conv2
+        x_block = x + x_conv2 * self.beta
 
-        layer = x.permute(0, 2, 3, 1)
-        layer_norm = self.layer_norm(layer)
+        layer = x_block.permute(0, 2, 3, 1)
+        layer_norm = self.layer_norm2(layer)
         layer_norm = layer_norm.permute(0, 3, 1, 2)
-        x_conv1 = self.conv1(layer_norm)
+        x_conv1 = self.conv3(layer_norm)
         simple_gate = self.simple_gate(x_conv1)
-        x_conv2 = self.conv2(simple_gate)
+        x_conv2 = self.conv4(simple_gate)
 
-        x = x * self.gamma + x_conv2
+        x = x + x_conv2 * self.gamma
 
         return x
     
@@ -59,8 +59,7 @@ class VN(nn.Module):
         self.nafblocks = nn.Sequential(*[NAFBlock(num_channels) for _ in range(depth)])
         self.last_layer = nn.Conv2d(num_channels, 3, kernel_size=3, padding=1)
 
-        self.fuse = nn.Conv2d(9, 3, kernel_size=3, padding=1)
-
+        self.initialize_weights()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.dim() == 3:
@@ -76,7 +75,7 @@ class VN(nn.Module):
         x = self.nafblocks(x)
         x = self.last_layer(x)
 
-        x = x + x_bc + self.fuse(x_concat)
+        x = x + x_bc
 
         return x
     
