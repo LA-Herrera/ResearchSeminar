@@ -239,4 +239,4 @@ if __name__ == "__main__":
     
     deg = SynthDeg()
     deg_img = deg.degrade_image_shuffle(img)
-    cv2.imwrite('./LR/initial_test_other.jpg', deg_img)
+    cv2.imwrite('./LR/initial_test.jpg', deg_img)

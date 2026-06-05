@@ -43,14 +43,14 @@ datasets:
 
 network_g:
   type: VN
-  depth: 4
+  depth: 8
   scale_factor: 4
   num_channels : 64
 
 train:
   optim_g:
     type: Adam
-    lr: !!float 8e-4
+    lr: !!float 2e-4
     weight_decay: 0
   
   scheduler:
@@ -63,18 +63,15 @@ train:
   warmup_iter: -1
 
   pixel_opt:
-    type: L1Loss
+    type: CharbonnierLoss
     loss_weight: 1.0
     reduction: mean
+    eps: !!float 1e-9
 
-  perceptual_opt:
-    type: PerceptualLoss
-    layer_weights:
-      'conv3_4': 1.0
-    vgg_type: vgg19
-    range_norm: false
-    perceptual_weight: 0.1
-    criterion: l1
+  fft_opt:
+    type: FFTLoss
+    loss_weight: 0.05
+    reduction: mean
 
 val:
   val_freq: !!float 1e4

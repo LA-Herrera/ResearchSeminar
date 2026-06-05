@@ -45,13 +45,13 @@ class NAFBlock(nn.Module):
         simple_gate = self.simple_gate(x_conv1)
         x_conv2 = self.conv4(simple_gate)
 
-        x = x + x_conv2 * self.gamma
+        x = x_block + x_conv2 * self.gamma
 
         return x
     
 @ARCH_REGISTRY.register()
 class VN(nn.Module):
-    def __init__(self, depth: int = 4, scale_factor: int = 4, num_channels: int = 64) -> None:
+    def __init__(self, depth: int = 8, scale_factor: int = 4, num_channels: int = 64) -> None:
         super(VN, self).__init__()
         self.scale_factor = scale_factor
 

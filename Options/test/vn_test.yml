@@ -1,11 +1,11 @@
-name: VN_v5
+name: VN_v8
 model_type: VN_Model
 scale: 4
 num_gpu: 1
 manual_seed: 42
 
 path:
-  pretrain_network_g: Experiments/models/vn_x4_d8_v3.pth
+  pretrain_network_g: Experiments/models/vn_x4_d8.pth
   strict_load_g: true
   results_root: Experiments/results
   log: results/logs
@@ -15,8 +15,8 @@ datasets:
   test:
     name: single_image
     type: PairedImageDataset
-    dataroot_lq: C:/Users/Usuario/Documents/GitHub/ResearchSeminar/Dataset/LR
-    dataroot_gt: C:/Users/Usuario/Documents/GitHub/ResearchSeminar/Dataset/HR
+    dataroot_lq: PATH/ResearchSeminar/Dataset/LR
+    dataroot_gt: PATH/GitHub/ResearchSeminar/Dataset/HR
     io_backend:
       type: disk
   
