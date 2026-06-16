@@ -75,8 +75,6 @@ class VN(nn.Module):
         x = self.nafblocks(x)
         x = self.last_layer(x)
 
-        x = x + x_bc
-
         return x
     
     def initialize_weights(self) -> None:

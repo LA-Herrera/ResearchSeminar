@@ -1,22 +1,20 @@
-name: VN_v8
+name: VN_3L_v2
 model_type: VN_Model
 scale: 4
 num_gpu: 1
 manual_seed: 42
 
 path:
-  pretrain_network_g: Experiments/models/vn_x4_d8.pth
+  pretrain_network_g: Experiments/models/vn_x4_d8_3l_v2.pth
   strict_load_g: true
   results_root: Experiments/results
-  log: results/logs
-  visualization: results/visualization
 
 datasets:
   test:
     name: single_image
     type: PairedImageDataset
-    dataroot_lq: PATH/ResearchSeminar/Dataset/LR
-    dataroot_gt: PATH/GitHub/ResearchSeminar/Dataset/HR
+    dataroot_lq: Dataset/LR
+    dataroot_gt: Dataset/HR
     io_backend:
       type: disk
   
@@ -32,9 +30,17 @@ val:
   metrics:
     psnr:
       type: calculate_psnr
-      crop_border: 0
+      crop_border: 4
       test_y_channel: false
     ssim:
       type: calculate_ssim
-      crop_border: 0
+      crop_border: 4
+      test_y_channel: false
+    lpips:
+      type: calculate_lpips
+      crop_border: 4
+      test_y_channel: false
+    dists:
+      type: calculate_dists
+      crop_border: 4
       test_y_channel: false
