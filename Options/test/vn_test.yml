@@ -1,11 +1,11 @@
-name: VN_3L_v2
+name: VN_x2
 model_type: VN_Model
-scale: 4
+scale: 2
 num_gpu: 1
 manual_seed: 42
 
 path:
-  pretrain_network_g: Experiments/models/vn_x4_d8_3l_v2.pth
+  pretrain_network_g: Experiments/models/vn_x2_d8.pth
   strict_load_g: true
   results_root: Experiments/results
 
@@ -13,7 +13,7 @@ datasets:
   test:
     name: single_image
     type: PairedImageDataset
-    dataroot_lq: Dataset/LR
+    dataroot_lq: Dataset/LR/x2
     dataroot_gt: Dataset/HR
     io_backend:
       type: disk
@@ -21,12 +21,12 @@ datasets:
 network_g:
   type: VN
   depth: 8
-  scale_factor: 4
+  scale_factor: 2
   num_channels : 64
 
 val:
   save_img: true
-  suffix: vn_x4_d8
+  suffix: vn_x2_d8
   metrics:
     psnr:
       type: calculate_psnr
