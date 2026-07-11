@@ -28,7 +28,7 @@ datasets:
     use_rot: true
 
     num_worker_per_gpu: 4 
-    batch_size_per_gpu: 32
+    batch_size_per_gpu: 16
     dataset_enlarge_ratio: 1
 
     prefetch_mode: ~
@@ -43,7 +43,7 @@ datasets:
 
 network_g:
   type: VN
-  depth: 8
+  depth: 10
   scale_factor: 2
   num_channels : 64
 
@@ -55,26 +55,31 @@ train:
   
   scheduler:
     type: MultiStepLR
-    milestones: [35364, 53046, 63655, 67191]
+    milestones: [70728, 113165, 127310, 134383]
     gamma: 0.5
   
   use_amp: true
-  total_iter: 70728 #50 epochs
+  total_iter: 141456
   warmup_iter: -1
 
   pixel_opt:
     type: CharbonnierLoss
     loss_weight: 1.0
     reduction: mean
-    eps: !!float 1e-9
+    eps: !!float 1e-09
 
-  fft_opt:
-    type: FFTLoss
-    loss_weight: 0.05
+  grad_opt:
+    type: GradientLoss
+    loss_weight: 0.1
     reduction: mean
 
+  variance_opt:
+    type: LocalVarianceLoss
+    loss_weight: 0.3
+    window_size: 8
+
 val:
-  val_freq: !!float 1e4
+  val_freq: !!float 5e4
   save_img: false
 
   metrics:
