@@ -99,15 +99,15 @@ class Blur:
 
 class Downscale:
     @staticmethod
-    def bicubic_downscale(img: np.ndarray, scale: float = 0.25) -> np.ndarray:  
+    def bicubic_downscale(img: np.ndarray, scale: float = 0.5) -> np.ndarray:  
         return cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
     
     @staticmethod
-    def bilinear_downscale(img: np.ndarray, scale: float = 0.25) -> np.ndarray:
+    def bilinear_downscale(img: np.ndarray, scale: float = 0.5) -> np.ndarray:
         return cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR)
     
     @staticmethod
-    def areasampling_downscale(img: np.ndarray, scale: float = 0.25) -> np.ndarray:
+    def areasampling_downscale(img: np.ndarray, scale: float = 0.5) -> np.ndarray:
         return cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
     
 class Noise:
@@ -235,8 +235,8 @@ class Compression:
         return frame
 
 if __name__ == "__main__":
-    img = cv2.imread('./HR/initial_test.jpg')
+    img = cv2.imread('./HR/256patch_test.jpg')
     
     deg = SynthDeg()
     deg_img = deg.degrade_image_shuffle(img)
-    cv2.imwrite('./LR/initial_test.jpg', deg_img)
+    cv2.imwrite('./LR/x2/256patch_test.jpg', deg_img)

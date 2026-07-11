@@ -1,11 +1,11 @@
-name: VN_x2
+name: VN_x2_d10_c64
 model_type: VN_Model
 scale: 2
 num_gpu: 1
 manual_seed: 42
 
 path:
-  pretrain_network_g: Experiments/models/vn_x2_d8.pth
+  pretrain_network_g: Experiments/models/vn_x2_d10.pth
   strict_load_g: true
   results_root: Experiments/results
 
@@ -20,13 +20,14 @@ datasets:
   
 network_g:
   type: VN
-  depth: 8
+  depth: 10
   scale_factor: 2
   num_channels : 64
 
 val:
   save_img: true
-  suffix: vn_x2_d8
+  suffix: vn_x2_d14
+  pbar: true
   metrics:
     psnr:
       type: calculate_psnr
