@@ -38,10 +38,20 @@ Dependencias principales: `torch`, `torchvision`, `basicsr`, `opencv-python`,
 |   └── utils/
 |   |   ├── loss.py               # FFT, Gradiente, Varianza Local
 |   |   └── metrics.py            # LPIP, DISTS
+├── param_count.py
 ├── requirements.txt
 ├── test.py
 └── train.py
 ```
+
+---
+
+## Conteo de Parámetros
+
+```bash
+python param_count.py -opt Options/train/vn_train.yml
+```
+El calculo de los parametros se hara según la profundidad y cantidad de canales especificadas en el archivo YAML.
 
 ---
 
@@ -56,7 +66,7 @@ Para cargar los parametros de una sesión anterior sin reanudar el estado comple
 ```yaml
 # En el archivo YAML
 path:
-  pretrain_network_g: Experiments/models/net_g_140600.pth
+  pretrain_network_g: Experiments/models/vn_x2_d8_c64.pth
   strict_load_g: false
   resume_state: ~
 ```
@@ -73,12 +83,27 @@ Los resultados son guardados en  `Experiments/results/`.
 
 ---
 
+## Nomenclatura de los modelos
+
+Los modelos entrenados siguen la siguiente convención de nombres:
+
+vn_x{scale}_d{depth}_c{channels}
+
+donde:
+- `scale`: indica el factor de escala utilizado
+- `depth`: indica la profundidad de la pila
+- `channels`: indica la cantidad de canales  
+
+Por ejemplo, vn_x2_d10_c48 corresponde al modelo entrenado con factor de escala 2, profundidad 10 y 64 canales.
+
+---
+
 ## Notas de configuración
 
 Toda la configuración del entrenamiento se controla a través de los archivos YAML en `Options/train/`. Cada experimento debe utilizar un campo `name` distinto para mantener separados los puntos de control y los registros:
 
 ```yaml
-name: VN_x4_d8
+name: VN_x2_d10
 ```
 
 Las combinaciones de pérdidas se definen en la sección `train` del archivo YAML. Todas las configuraciones utilizan Charbonnier como pérdida de píxel base. Los términos adicionales se añaden según sea necesario con sus respectivos pesos.

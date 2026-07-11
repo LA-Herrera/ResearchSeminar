@@ -1,16 +1,16 @@
 path:
   root: ./
-  experiments_root: /PATH/experiments/VN_x4_d4/model/
-  training_states: /PATH/experiments/VN_x4_d4/training_states/
+  experiments_root: /PATH/experiments/VN_x2_d10/model/
+  training_states: /PATH/experiments/VN_x2_d10/training_states/
   models: /PATH/ResearchSeminar/Training/models/
-  log: /PATH/experiments/VN_x4_d4/log/
+  log: /PATH/experiments/VN_x10_d2/log/
   pretrain_network_g: ~
   strict_load_g: true
   resume_state: ~
 
-name: VN_x4_d4
+name: VN_x2_d10
 model_type: VN_Model
-scale: 4
+scale: 2
 num_gpu: 1
 manual_seed: 42
 
